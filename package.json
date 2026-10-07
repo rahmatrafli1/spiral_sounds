@@ -1,0 +1,16 @@
+{
+  "name": "spiral-sounds",
+  "version": "1.0.0",
+  "description": "Online classic vinyl store",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Rahmat Rafli",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^18.0.6",
+    "express": "^5.2.1"
+  }
+}
