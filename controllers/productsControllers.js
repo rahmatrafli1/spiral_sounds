@@ -28,8 +28,16 @@ export async function getProducts(req, res) {
     let products;
 
     try {
+      const { genre } = req.query;
       let query = "SELECT * FROM products";
-      products = await db.all(query);
+      const params = [];
+
+      if (genre) {
+        query += " WHERE genre = ?";
+        params.push(genre);
+      }
+
+      products = await db.all(query, params);
     } finally {
       await db.close();
     }
