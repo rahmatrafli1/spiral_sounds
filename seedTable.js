@@ -31,13 +31,8 @@ async function seedTable() {
     await db.exec("COMMIT");
     console.log("All records inserted successfully.");
   } catch (err) {
-    try {
-      await db.exec("ROLLBACK");
-    } catch (rollbackError) {
-      console.error("Error rolling back transaction:", rollbackError.message);
-    }
+    await db.exec("ROLLBACK");
     console.error("Error inserting data:", err.message);
-    process.exitCode = 1;
   } finally {
     await db.close();
     console.log("Database connection closed.");
