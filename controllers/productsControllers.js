@@ -28,13 +28,21 @@ export async function getProducts(req, res) {
     let products;
 
     try {
-      const { genre } = req.query;
+      const { genre, search } = req.query;
       let query = "SELECT * FROM products";
       const params = [];
 
       if (genre) {
         query += " WHERE genre = ?";
         params.push(genre);
+      }
+
+      if (search) {
+        query += genre
+          ? " AND (title LIKE ? OR artist LIKE ? OR genre LIKE ?)"
+          : " WHERE title LIKE ? OR artist LIKE ? OR genre LIKE ?";
+        const searchPattern = `%${search}%`;
+        params.push(searchPattern, searchPattern, searchPattern);
       }
 
       products = await db.all(query, params);
