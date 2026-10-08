@@ -1,4 +1,5 @@
 import validator from "validator";
+import { getDBConnection } from "../db/db.js";
 
 export async function registerUser(req, res) {
   const body = req.body ?? {};
@@ -13,17 +14,45 @@ export async function registerUser(req, res) {
   }
 
   if (!/^[a-zA-Z0-9_-]{1,20}$/.test(username)) {
-    return res
-      .status(400)
-      .json({
-        error:
-          "Username must be 1–20 characters, using letters, numbers, _ or -.",
-      });
+    return res.status(400).json({
+      error:
+        "Username must be 1–20 characters, using letters, numbers, _ or -.",
+    });
   }
 
   if (!validator.isEmail(email)) {
     return res.status(400).json({ error: "Invalid email address." });
   }
 
-  return res.status(200).json({ message: "User data is valid." });
+  try {
+    const db = await getDBConnection();
+    let statusCode = 201;
+    let responseBody = { message: "User registered" };
+
+    const existingUser = await db.get(
+      "SELECT id FROM users WHERE email = ? OR username = ?",
+      email,
+      username,
+    );
+
+    if (existingUser) {
+      statusCode = 400;
+      responseBody = { error: "Email or username already in use." };
+    } else {
+      await db.run(
+        "INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)",
+        name,
+        email,
+        username,
+        password,
+      );
+    }
+
+    return res.status(statusCode).json(responseBody);
+  } catch (err) {
+    console.error("Registration error:", err.message);
+    return res
+      .status(500)
+      .json({ error: "Registration failed. Please try again." });
+  }
 }
