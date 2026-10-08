@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import validator from "validator";
 import { getDBConnection } from "../db/db.js";
 
@@ -39,12 +40,14 @@ export async function registerUser(req, res) {
       statusCode = 400;
       responseBody = { error: "Email or username already in use." };
     } else {
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       await db.run(
         "INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)",
         name,
         email,
         username,
-        password,
+        hashedPassword,
       );
     }
 
