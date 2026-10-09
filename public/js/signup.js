@@ -19,6 +19,8 @@ signupForm.addEventListener('submit', async (e) => {
       headers: {
         'Content-Type': 'application/json'
       },
+      // credentials: 'include', 
+      // Ensure session is created
       body: JSON.stringify({ name, email, username, password })
     })
 

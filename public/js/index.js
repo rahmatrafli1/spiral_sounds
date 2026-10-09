@@ -11,13 +11,13 @@ document.getElementById('logout-btn').addEventListener('click', logout)
 async function init() {
   populateGenreSelect()
   const products = await getProducts()
-  const name = await checkAuth()
-  renderGreeting(name)
+  // const username = await checkAuth()
+  // renderGreeting(username)
   renderProducts(products)
-  showHideMenuItems(name)
-  if (name) {
-    await updateCartIcon()
-  }
+  // showHideMenuItems(username)
+  // if (username) {
+  //   await updateCartIcon()
+  // }
 }
 
 init()
