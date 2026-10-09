@@ -42,13 +42,14 @@ export async function registerUser(req, res) {
     } else {
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      await db.run(
+      const result = await db.run(
         "INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)",
         name,
         email,
         username,
         hashedPassword,
       );
+      req.session.userId = result.lastID;
     }
 
     return res.status(statusCode).json(responseBody);
