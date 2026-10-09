@@ -3,6 +3,7 @@ import session from "express-session";
 import "dotenv/config";
 import { productsRouter } from "./routes/products.js";
 import { authRouter } from "./routes/auth.js";
+import { meRouter } from "./routes/me.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -26,6 +27,7 @@ app.use(
 app.use(express.static("public"));
 app.use("/api/products", productsRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/auth/me", meRouter);
 
 app
   .listen(PORT, () => {
