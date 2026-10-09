@@ -60,3 +60,38 @@ export async function registerUser(req, res) {
       .json({ error: "Registration failed. Please try again." });
   }
 }
+
+export async function loginUser(req, res) {
+  const body = req.body ?? {};
+  const username =
+    typeof body.username === "string" ? body.username.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
+
+  if (!username || !password.trim()) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    const db = await getDBConnection();
+    try {
+      const user = await db.get(
+        "SELECT id, password FROM users WHERE username = ?",
+        username,
+      );
+
+      if (!user || !(await bcrypt.compare(password, user.password))) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      req.session.userId = user.id;
+      return res.json({ message: "Logged in" });
+    } finally {
+      await db.close();
+    }
+  } catch (err) {
+    console.error("Login error:", err.message);
+    return res
+      .status(500)
+      .json({ error: "Login failed. Please try again." });
+  }
+}
