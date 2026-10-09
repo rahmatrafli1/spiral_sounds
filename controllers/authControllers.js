@@ -90,8 +90,19 @@ export async function loginUser(req, res) {
     }
   } catch (err) {
     console.error("Login error:", err.message);
-    return res
-      .status(500)
-      .json({ error: "Login failed. Please try again." });
+    return res.status(500).json({ error: "Login failed. Please try again." });
   }
+}
+
+export function logoutUser(req, res) {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err.message);
+      return res
+        .status(500)
+        .json({ error: "Logout failed. Please try again." });
+    }
+
+    return res.json({ message: "Logged out" });
+  });
 }
