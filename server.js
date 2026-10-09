@@ -6,7 +6,7 @@ import { authRouter } from "./routes/auth.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-const secret = process.env.SPIRAL_SESSION_SECRET || "jellyfish-baskingshark";
+const secret = process.env.SPIRAL_SESSION_SECRET;
 
 app.use(express.json());
 
