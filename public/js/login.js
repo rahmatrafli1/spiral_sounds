@@ -12,12 +12,12 @@ signinForm.addEventListener('submit', async (e) => {
   submitBtn.disabled = true
 
   try {
-    const res = await fetch('api/auth/login', {
+    const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      credentials: 'include', // Ensure session cookie is sent
+      credentials: 'include', 
       body: JSON.stringify({ username, password })
     })
 

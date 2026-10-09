@@ -60,3 +60,43 @@ export async function registerUser(req, res) {
       .json({ error: "Registration failed. Please try again." });
   }
 }
+
+export async function loginUser(req, res) {
+  let { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  username = username.trim();
+
+  try {
+    const db = await getDBConnection();
+
+    const user = await db.get("SELECT * FROM users WHERE username = ?", [
+      username,
+    ]);
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+
+    if (!isValid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    req.session.userId = user.id;
+    res.json({ message: "Logged in" });
+  } catch (err) {
+    console.error("Login error:", err.message);
+    res.status(500).json({ error: "Login failed. Please try again." });
+  }
+}
+
+export async function logoutUser(req, res) {
+  req.session.destroy(() => {
+    res.json({ message: "Logged out" });
+  });
+}

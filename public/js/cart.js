@@ -25,10 +25,10 @@ dom.checkoutBtn.addEventListener('click', () => {
 })
 
 async function init() {
-  // loadCart(dom)
-  // const username = await checkAuth()
-  // renderGreeting(username)
-  // showHideMenuItems(username)
+  loadCart(dom)
+  const name = await checkAuth()
+  renderGreeting(name)
+  showHideMenuItems(name)
 } 
  
 init()
