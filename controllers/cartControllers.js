@@ -103,3 +103,47 @@ export async function getAll(req, res) {
     await db.close();
   }
 }
+
+export async function deleteItem(req, res) {
+  const userId = req.session?.userId;
+  const itemId = Number(req.params?.itemId);
+
+  if (!userId) {
+    return res.status(401).json({ error: "You must be logged in." });
+  }
+
+  if (!Number.isSafeInteger(itemId) || itemId <= 0) {
+    return res.status(400).json({ error: "Invalid item ID" });
+  }
+
+  let db;
+
+  try {
+    db = await getDBConnection();
+
+    const item = await db.get(
+      "SELECT quantity FROM cart_items WHERE id = ? AND user_id = ?",
+      itemId,
+      userId,
+    );
+
+    if (!item) {
+      return res.status(400).json({ error: "Invalid item ID" });
+    }
+
+    await db.run(
+      "DELETE FROM cart_items WHERE id = ? AND user_id = ?",
+      itemId,
+      userId,
+    );
+
+    return res.status(204).end();
+  } catch (err) {
+    console.error("Delete cart item error:", err);
+    return res.status(500).json({ error: "Failed to delete cart item." });
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
