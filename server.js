@@ -5,6 +5,7 @@ import { productsRouter } from "./routes/products.js";
 import { authRouter } from "./routes/auth.js";
 import { meRouter } from "./routes/me.js";
 import { cartRouter } from "./routes/cart.js";
+import { checkoutRouter } from "./routes/checkout.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -30,6 +31,7 @@ app.use("/api/products", productsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/auth/me", meRouter);
 app.use("/api/cart", cartRouter);
+app.use("/api/checkout", checkoutRouter);
 
 app
   .listen(PORT, () => {

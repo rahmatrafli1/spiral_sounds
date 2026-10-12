@@ -45,6 +45,10 @@ export async function loadCart(dom) {
     const items = await fetchCartItems(dom);
     renderCartItems(items, cartList);
     updateCartTotal(items, cartTotal, checkoutBtn);
+    if (items.length === 0) {
+      checkoutBtn.disabled = true;
+      checkoutBtn.classList.add("disabled");
+    }
   } catch (err) {
     console.error("Error loading cart:", err);
     cartList.innerHTML = "<li>Error loading cart data.</li>";
@@ -97,6 +101,9 @@ function updateCartTotal(items, cartTotal, checkoutBtn) {
   if (total <= 0) {
     checkoutBtn.disabled = true;
     checkoutBtn.classList.add("disabled");
+  } else {
+    checkoutBtn.disabled = false;
+    checkoutBtn.classList.remove("disabled");
   }
 }
 
@@ -114,22 +121,5 @@ export async function removeItem(itemId, dom) {
     }
   } catch (err) {
     console.error("Error removing item:", err);
-  }
-}
-
-export async function removeAll(dom) {
-  try {
-    const res = await fetch(`/api/cart/all`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    if (res.status === 204) {
-      await loadCart(dom);
-    } else {
-      console.error("Error clearing cart:", await res.text());
-    }
-  } catch (err) {
-    console.error("Error clearing cart:", err);
   }
 }
