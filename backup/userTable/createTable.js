@@ -1,7 +1,7 @@
-import { getDBConnection } from '../db/db.js'
+import { getDBConnection } from "../../db/db.js";
 
 async function createTable() {
-  const db = await getDBConnection()
+  const db = await getDBConnection();
 
   try {
     await db.exec(`
@@ -13,12 +13,12 @@ async function createTable() {
         password TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
-    `)
+    `);
   } finally {
-    await db.close()
+    await db.close();
   }
 
-  console.log('table created')
+  console.log("table created");
 }
 
-createTable()
+createTable();
