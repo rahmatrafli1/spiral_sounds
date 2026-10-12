@@ -73,3 +73,33 @@ export async function getCartCount(req, res) {
     }
   }
 }
+
+export async function getAll(req, res) {
+  if (!req.session.userId) {
+    return res.json({ err: "not logged in" });
+  }
+
+  const db = await getDBConnection();
+
+  try {
+    const items = await db.all(
+      `SELECT
+        cart_items.id AS cartItemId,
+        cart_items.quantity,
+        products.title,
+        products.artist,
+        products.price
+      FROM cart_items
+      JOIN products ON products.id = cart_items.product_id
+      WHERE cart_items.user_id = ?`,
+      req.session.userId,
+    );
+
+    return res.json({ items });
+  } catch (err) {
+    console.error("Get cart error:", err);
+    return res.status(500).json({ error: "Failed to get cart items." });
+  } finally {
+    await db.close();
+  }
+}
