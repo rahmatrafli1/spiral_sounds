@@ -45,3 +45,31 @@ export async function addToCart(req, res) {
     }
   }
 }
+
+export async function getCartCount(req, res) {
+  const userId = req.session?.userId;
+
+  if (!userId) {
+    return res.json({ totalItems: 0 });
+  }
+
+  let db;
+
+  try {
+    db = await getDBConnection();
+
+    const result = await db.get(
+      "SELECT COALESCE(SUM(quantity), 0) AS totalItems FROM cart_items WHERE user_id = ?",
+      userId,
+    );
+
+    return res.json({ totalItems: Number(result?.totalItems ?? 0) });
+  } catch (err) {
+    console.error("Get cart count error:", err);
+    return res.status(500).json({ error: "Failed to get cart count." });
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
