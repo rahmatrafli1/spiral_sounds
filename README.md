@@ -1,46 +1,46 @@
 # Spiral Sounds
 
-Spiral Sounds adalah aplikasi toko online sederhana untuk menjelajahi dan membeli piringan hitam vinyl. Aplikasi menyediakan katalog dengan pencarian dan filter genre, akun pengguna, serta keranjang belanja yang tersimpan di SQLite.
+Spiral Sounds is a simple online store for browsing and buying vinyl records. The app includes a searchable catalog with genre filters, user accounts, and a shopping cart stored in SQLite.
 
-## Fitur
+## Features
 
-- Melihat katalog vinyl, mencari berdasarkan judul, artis, atau genre, dan memfilter berdasarkan genre.
-- Mendaftar dan masuk menggunakan akun pengguna.
-- Menambahkan produk ke keranjang dan melihat jumlah item.
-- Melihat dan menghapus item keranjang, termasuk mengosongkan seluruh keranjang.
-- Menyimpan akun, katalog, dan keranjang di database SQLite.
+- Browse the vinyl catalog, search by title, artist, or genre, and filter by genre.
+- Create an account and log in.
+- Add products to the cart and view the item count.
+- View and remove cart items or empty the entire cart.
+- Store user accounts, catalog data, and cart items in SQLite.
 
-## Teknologi
+## Tech Stack
 
-- Node.js dengan Express 5
-- SQLite melalui `sqlite` dan `sqlite3`
-- Session berbasis cookie dengan `express-session`
-- HTML, CSS, dan JavaScript
+- Node.js with Express 5
+- SQLite using `sqlite` and `sqlite3`
+- Cookie-based sessions with `express-session`
+- HTML, CSS, and JavaScript
 
-## Persiapan
+## Setup
 
-Pastikan Node.js dan npm sudah terpasang. Dari direktori proyek, pasang dependensi:
+Make sure Node.js and npm are installed. From the project directory, install the dependencies:
 
 ```bash
 npm install
 ```
 
-Siapkan file `.env` dari contoh yang tersedia:
+Create a `.env` file from the provided example:
 
-```powershell
-Copy-Item .env.example .env
+```bash
+cp .env.example .env
 ```
 
-Atur nilai `SPIRAL_SESSION_SECRET` di `.env` dengan string acak yang kuat. `PORT` bersifat opsional dan default-nya `8000`.
+Set `SPIRAL_SESSION_SECRET` in `.env` to a strong random string. `PORT` is optional and defaults to `8000`.
 
 ```env
 PORT=8000
-SPIRAL_SESSION_SECRET=ganti-dengan-string-acak-yang-kuat
+SPIRAL_SESSION_SECRET=replace-with-a-strong-random-string
 ```
 
-### Menyiapkan database baru
+### Initialize a new database
 
-Database menggunakan file `database.db` di direktori proyek. Jika belum memiliki database beserta tabelnya, jalankan perintah berikut **satu kali** dari direktori proyek:
+The app uses a `database.db` file in the project directory. If you don't already have a database and its tables, run these commands **once** from the project directory:
 
 ```bash
 node sql/productTable/createTable.js
@@ -49,55 +49,55 @@ node sql/cartItemsTable/createTable.js
 node sql/productTable/seedTable.js
 ```
 
-Perintah terakhir mengisi katalog awal. Jangan jalankan ulang perintah pembuatan tabel keranjang atau pengisian katalog pada database yang sudah disiapkan: tabel keranjang tidak dibuat secara idempoten, dan pengisian katalog akan menambahkan data lagi.
+The last command populates the initial catalog. Do not rerun the cart table creation or catalog seeding commands on an already initialized database: the cart table script is not idempotent, and seeding will add the catalog data again.
 
-## Menjalankan aplikasi
+## Run the app
 
-Mode normal:
+Start the app normally:
 
 ```bash
 npm start
 ```
 
-Mode pengembangan dengan restart otomatis:
+Start in development mode with automatic restarts:
 
 ```bash
 npm run dev
 ```
 
-Buka [http://localhost:8000](http://localhost:8000), atau gunakan port yang diatur melalui `PORT`.
+Open [http://localhost:8000](http://localhost:8000), or use the port configured in `PORT`.
 
 ## API
 
-Semua request yang mengirim data menggunakan JSON. Login dan pendaftaran menggunakan session cookie; semua endpoint keranjang memerlukan pengguna yang sudah masuk.
+Requests that send data use JSON. Login and registration use a session cookie; all cart endpoints require the user to be logged in.
 
-| Metode | Endpoint | Keterangan |
-| --- | --- | --- |
-| `GET` | `/api/products` | Mengambil katalog. Opsional: `?genre=Rock` dan/atau `?search=artist` untuk filter dan pencarian. |
-| `GET` | `/api/products/genres` | Mengambil daftar genre. |
-| `POST` | `/api/auth/register` | Membuat akun. Body: `{ "name": "...", "email": "...", "username": "...", "password": "..." }`. |
-| `POST` | `/api/auth/login` | Masuk. Body: `{ "username": "...", "password": "..." }`. |
-| `GET` | `/api/auth/logout` | Keluar dan menghapus session. |
-| `GET` | `/api/auth/me` | Memeriksa status login dan mengambil nama pengguna jika sudah masuk. |
-| `POST` | `/api/cart/add` | Menambahkan satu unit produk. Body: `{ "productId": 1 }`. Memerlukan login. |
-| `GET` | `/api/cart/cart-count` | Mengambil jumlah total unit di keranjang. |
-| `GET` | `/api/cart` | Mengambil item keranjang. Memerlukan login. |
-| `DELETE` | `/api/cart/:itemId` | Menghapus item keranjang berdasarkan ID item. Memerlukan login. |
-| `DELETE` | `/api/cart/all` | Mengosongkan keranjang. Memerlukan login. |
+| Method   | Endpoint               | Description                                                                                         |
+| -------- | ---------------------- | --------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/products`        | Get the catalog. Optional: `?genre=Rock` and/or `?search=artist` to filter and search.              |
+| `GET`    | `/api/products/genres` | Get the list of genres.                                                                             |
+| `POST`   | `/api/auth/register`   | Create an account. Body: `{ "name": "...", "email": "...", "username": "...", "password": "..." }`. |
+| `POST`   | `/api/auth/login`      | Log in. Body: `{ "username": "...", "password": "..." }`.                                           |
+| `GET`    | `/api/auth/logout`     | Log out and destroy the session.                                                                    |
+| `GET`    | `/api/auth/me`         | Check login status and get the user's name if logged in.                                            |
+| `POST`   | `/api/cart/add`        | Add one unit of a product. Body: `{ "productId": 1 }`. Requires login.                              |
+| `GET`    | `/api/cart/cart-count` | Get the total number of units in the cart.                                                          |
+| `GET`    | `/api/cart`            | Get the cart items. Requires login.                                                                 |
+| `DELETE` | `/api/cart/:itemId`    | Remove a cart item by its ID. Requires login.                                                       |
+| `DELETE` | `/api/cart/all`        | Empty the cart. Requires login.                                                                     |
 
-## Struktur proyek
+## Project structure
 
 ```text
 .
-├── controllers/   # Logika endpoint
-├── db/            # Koneksi SQLite
-├── middleware/    # Middleware autentikasi
-├── public/        # Halaman, aset, dan JavaScript frontend
-├── routes/        # Definisi route API
-└── sql/           # Skrip pembuatan tabel dan data katalog
+├── controllers/   # Endpoint logic
+├── db/            # SQLite connection
+├── middleware/    # Authentication middleware
+├── public/        # Frontend pages, assets, and JavaScript
+├── routes/        # API route definitions
+└── sql/           # Table creation scripts and catalog data
 ```
 
-## Catatan
+## Notes
 
-- `database.db` dan `.env` tidak disertakan dalam Git. Buat file database lokal dengan langkah di atas.
-- Session store bawaan Express digunakan untuk pengembangan; siapkan session store yang persisten sebelum menjalankan aplikasi di produksi.
+- `database.db` and `.env` are not included in Git. Create your local database using the steps above.
+- The default Express session store is intended for development; configure a persistent session store before running the app in production.
