@@ -147,3 +147,28 @@ export async function deleteItem(req, res) {
     }
   }
 }
+
+export async function deleteAll(req, res) {
+  const userId = req.session?.userId;
+
+  if (!userId) {
+    return res.status(401).json({ error: "You must be logged in." });
+  }
+
+  let db;
+
+  try {
+    db = await getDBConnection();
+
+    await db.run("DELETE FROM cart_items WHERE user_id = ?", userId);
+
+    return res.status(204).end();
+  } catch (err) {
+    console.error("Delete all cart items error:", err);
+    return res.status(500).json({ error: "Failed to delete cart items." });
+  } finally {
+    if (db) {
+      await db.close();
+    }
+  }
+}
