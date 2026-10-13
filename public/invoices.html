@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/index.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plaster&family=Poppins:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <title>Orders &amp; Invoices | Spiral Sounds</title>
+</head>
+
+<body>
+  <div class="top-banner">
+    <p id="greeting" class="top-banner-greeting"></p>
+    <button class="menu-toggle" aria-label="Toggle menu"><img src="images/menu.svg" alt=""></button>
+    <nav class="header-menu" aria-label="Main menu">
+      <a href="/login.html" id="login">Log in</a>
+      <a href="/signup.html" id="signup">Sign up</a>
+      <a href="/invoices.html" id="orders-link" aria-current="page">Orders &amp; invoices</a>
+      <button class="main-btn" id="logout-btn">Log out</button>
+    </nav>
+  </div>
+
+  <header>
+    <a href="/"><img src="/images/spiral_logo.png" alt="Spiral Sounds Logo"></a>
+    <div class="header-text">
+      <h1>Spiral Sounds</h1>
+      <p class="subhead">The best in vinyl</p>
+    </div>
+  </header>
+
+  <main class="invoices-main">
+    <h2>Orders &amp; invoices</h2>
+    <p id="invoice-notification" class="invoice-notification" role="status" aria-live="polite" hidden></p>
+    <p id="invoice-message" role="status" aria-live="polite"></p>
+    <ul id="invoice-list" class="invoice-list"></ul>
+
+    <section id="invoice-detail" class="invoice-detail" aria-labelledby="invoice-detail-title" hidden>
+      <div class="invoice-actions">
+        <button type="button" class="main-btn" id="print-invoice">Print invoice</button>
+        <button type="button" class="main-btn" id="close-invoice">Close</button>
+      </div>
+      <div id="invoice-content" class="invoice-paper"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>? Spiral Sounds</p>
+  </footer>
+  <script src="js/menu.js" type="module"></script>
+  <script src="js/invoices.js" type="module"></script>
+</body>
+
+</html>

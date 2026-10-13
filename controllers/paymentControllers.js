@@ -265,6 +265,14 @@ export async function handleMidtransNotification(req, res) {
       fraud_status: fraudStatus,
     } = req.body ?? {};
 
+    console.log("Midtrans notification received:", {
+      orderId,
+      statusCode,
+      grossAmount,
+      transactionStatus,
+      fraudStatus,
+    });
+
     if (
       typeof orderId !== "string" ||
       typeof statusCode !== "string" ||
@@ -287,6 +295,8 @@ export async function handleMidtransNotification(req, res) {
       return res.status(403).json({ error: "Invalid notification signature." });
     }
 
+    console.log("Midtrans notification signature verified for order:", orderId);
+
     const isPaid =
       transactionStatus === "settlement" ||
       (transactionStatus === "capture" && fraudStatus === "accept");
@@ -307,6 +317,13 @@ export async function handleMidtransNotification(req, res) {
         return res.status(404).json({ error: "Order not found." });
       }
 
+      console.log("Midtrans order matched notification:", {
+        orderId,
+        orderStatus: order.status,
+        expectedAmount: order.gross_amount_idr,
+        receivedAmount: grossAmount,
+      });
+
       if (Number(grossAmount) !== order.gross_amount_idr) {
         await db.exec("ROLLBACK");
         console.error("Midtrans notification amount mismatch:", {
@@ -317,24 +334,34 @@ export async function handleMidtransNotification(req, res) {
         return res.status(400).json({ error: "Payment amount does not match order." });
       }
 
+      let resultingStatus = order.status;
       if (order.status !== "paid" && isPaid) {
         await db.run(
           "UPDATE orders SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
           orderId,
         );
+        resultingStatus = "paid";
       } else if (order.status === "pending" && isExpired) {
         await db.run(
           "UPDATE orders SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
           orderId,
         );
+        resultingStatus = "expired";
       } else if (order.status === "pending" && isFailed) {
         await db.run(
           "UPDATE orders SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
           orderId,
         );
+        resultingStatus = "failed";
       }
 
       await db.exec("COMMIT");
+      console.log("Midtrans notification processed:", {
+        orderId,
+        transactionStatus,
+        previousStatus: order.status,
+        resultingStatus,
+      });
     } catch (err) {
       await db.exec("ROLLBACK");
       throw err;

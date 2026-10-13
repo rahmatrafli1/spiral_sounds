@@ -98,6 +98,8 @@ Requests that send data use JSON. Login and registration use a session cookie; a
 | `GET`    | `/api/checkout/config` | Get the public Midtrans Snap configuration. Requires login.                                        |
 | `POST`   | `/api/checkout`        | Create a pending order and Midtrans Snap transaction from the current cart. Requires login.        |
 | `GET`    | `/api/checkout/:orderId`| Check the status of one of the logged-in user's orders. Requires login.                             |
+| `GET`    | `/api/invoices`        | List the logged-in user's invoices and order statuses. Requires login.                              |
+| `GET`    | `/api/invoices/:orderId` | Get one invoice with its saved order items. Requires login.                                          |
 | `POST`   | `/api/checkout/notification` | Receive Midtrans payment notifications; verify its signature before updating an order.         |
 
 Configure `https://<your-domain>/api/checkout/notification` as the payment notification URL in Midtrans.

@@ -34,4 +34,6 @@ export function showHideMenuItems(name) {
   document.getElementById('login').style.display = isLoggedIn ? 'none' : 'inline'
   document.getElementById('signup').style.display = isLoggedIn ? 'none' : 'inline'
   document.getElementById('logout-btn').style.display = isLoggedIn ? 'inline' : 'none'
+  const ordersLink = document.getElementById('orders-link')
+  if (ordersLink) ordersLink.style.display = isLoggedIn ? 'inline' : 'none'
 }
