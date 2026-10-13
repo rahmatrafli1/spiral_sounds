@@ -33,6 +33,7 @@ async function seedTable() {
   } catch (err) {
     await db.exec("ROLLBACK");
     console.error("Error inserting data:", err.message);
+    process.exitCode = 1;
   } finally {
     await db.close();
     console.log("Database connection closed.");
