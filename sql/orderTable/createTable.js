@@ -12,7 +12,7 @@ async function createTable() {
         total_usd REAL NOT NULL,
         gross_amount_idr INTEGER NOT NULL,
         usd_idr_rate REAL NOT NULL,
-        status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'failed')),
+        status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'expired', 'failed')),
         snap_token TEXT,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

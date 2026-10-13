@@ -46,26 +46,25 @@ async function startCheckout() {
       throw new Error(payment.error || "Could not start the payment.");
     }
 
+    await loadCart(dom);
+    await updateCartIcon();
     dom.userMessage.textContent =
       `Order ${payment.orderId} — total Rp${payment.amountIdr.toLocaleString("id-ID")}. ` +
-      "Complete the payment in the secure Midtrans window.";
+      "Your cart is now empty. Complete payment in the secure Midtrans window.";
 
     window.snap.pay(payment.token, {
       onSuccess: () => confirmPayment(payment.orderId),
       onPending: () => {
         dom.userMessage.textContent =
-          "Payment is pending. Your cart will be cleared after Midtrans confirms it.";
-        dom.checkoutBtn.disabled = false;
+          "Payment is pending. Your cart is empty; the order status will update when Midtrans confirms it.";
       },
       onError: () => {
         dom.userMessage.textContent =
-          "The payment could not be completed. Your cart has not been cleared.";
-        dom.checkoutBtn.disabled = false;
+          "The payment could not be completed. Your cart is empty; check the order status before trying again.";
       },
       onClose: () => {
         dom.userMessage.textContent =
-          "Payment window closed. You can continue checkout from your cart.";
-        dom.checkoutBtn.disabled = false;
+          "Payment window closed. Your cart is empty and the order remains pending until Midtrans updates it.";
       },
     });
   } catch (err) {
@@ -99,16 +98,21 @@ async function confirmPayment(orderId) {
         return;
       }
 
+      if (order.status === "expired") {
+        dom.userMessage.textContent =
+          "Payment expired. This order can no longer be paid.";
+        return;
+      }
+
       if (order.status === "failed") {
         dom.userMessage.textContent =
-          "Payment failed. Your cart has not been cleared.";
-        dom.checkoutBtn.disabled = false;
+          "Payment failed. This order can no longer be paid.";
         return;
       }
     } catch (err) {
       console.error("Payment confirmation error:", err);
       dom.userMessage.textContent = err.message;
-      dom.checkoutBtn.disabled = false;
+      await loadCart(dom);
       return;
     }
 
@@ -116,8 +120,7 @@ async function confirmPayment(orderId) {
   }
 
   dom.userMessage.textContent =
-    "Payment is still being confirmed. Your cart will remain until Midtrans verifies it.";
-  dom.checkoutBtn.disabled = false;
+    "Payment is still being confirmed. Your cart is empty; Midtrans will update the order status when confirmed.";
 }
 
 function loadMidtrans({ clientKey, isProduction }) {

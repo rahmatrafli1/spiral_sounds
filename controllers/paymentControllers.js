@@ -187,11 +187,19 @@ export async function createPayment(req, res) {
       });
     }
 
-    await db.run(
-      "UPDATE orders SET snap_token = ? WHERE order_id = ?",
-      gatewayResponse.token,
-      orderId,
-    );
+    await db.exec("BEGIN IMMEDIATE");
+    try {
+      await db.run(
+        "UPDATE orders SET snap_token = ? WHERE order_id = ?",
+        gatewayResponse.token,
+        orderId,
+      );
+      await db.run("DELETE FROM cart_items WHERE user_id = ?", req.session.userId);
+      await db.exec("COMMIT");
+    } catch (err) {
+      await db.exec("ROLLBACK");
+      throw err;
+    }
 
     return res.status(201).json({
       orderId,
@@ -282,7 +290,8 @@ export async function handleMidtransNotification(req, res) {
     const isPaid =
       transactionStatus === "settlement" ||
       (transactionStatus === "capture" && fraudStatus === "accept");
-    const isFailed = ["deny", "cancel", "expire"].includes(transactionStatus);
+    const isExpired = transactionStatus === "expire";
+    const isFailed = ["deny", "cancel"].includes(transactionStatus);
 
     db = await getDBConnection();
     await db.exec("BEGIN IMMEDIATE");
@@ -292,9 +301,20 @@ export async function handleMidtransNotification(req, res) {
         orderId,
       );
 
-      if (!order || Number(grossAmount) !== order.gross_amount_idr) {
+      if (!order) {
         await db.exec("ROLLBACK");
+        console.error("Midtrans notification references unknown order:", orderId);
         return res.status(404).json({ error: "Order not found." });
+      }
+
+      if (Number(grossAmount) !== order.gross_amount_idr) {
+        await db.exec("ROLLBACK");
+        console.error("Midtrans notification amount mismatch:", {
+          orderId,
+          receivedAmount: grossAmount,
+          expectedAmount: order.gross_amount_idr,
+        });
+        return res.status(400).json({ error: "Payment amount does not match order." });
       }
 
       if (order.status !== "paid" && isPaid) {
@@ -302,28 +322,11 @@ export async function handleMidtransNotification(req, res) {
           "UPDATE orders SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
           orderId,
         );
-
-        const purchasedItems = await db.all(
-          "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
+      } else if (order.status === "pending" && isExpired) {
+        await db.run(
+          "UPDATE orders SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
           orderId,
         );
-        for (const item of purchasedItems) {
-          await db.run(
-            `DELETE FROM cart_items
-             WHERE user_id = ? AND product_id = ? AND quantity <= ?`,
-            order.user_id,
-            item.product_id,
-            item.quantity,
-          );
-          await db.run(
-            `UPDATE cart_items SET quantity = quantity - ?
-             WHERE user_id = ? AND product_id = ? AND quantity > ?`,
-            item.quantity,
-            order.user_id,
-            item.product_id,
-            item.quantity,
-          );
-        }
       } else if (order.status === "pending" && isFailed) {
         await db.run(
           "UPDATE orders SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",

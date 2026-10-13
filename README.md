@@ -8,7 +8,7 @@ Spiral Sounds is a simple online store for browsing and buying vinyl records. Th
 - Create an account and log in.
 - Add products to the cart and view the item count.
 - View and remove cart items or empty the entire cart.
-- Pay for an order through Midtrans Snap. The cart is updated only after a verified payment notification.
+- Pay for an order through Midtrans Snap. The cart is emptied after a payment transaction is successfully created; order status is updated by a verified Midtrans notification.
 - Store user accounts, catalog data, and cart items in SQLite.
 
 ## Tech Stack
@@ -60,7 +60,7 @@ node sql/productTable/seedTable.js
 ```
 
 The last command populates the initial catalog. Do not rerun the cart table creation or catalog seeding commands on an already initialized database: the cart table script is not idempotent, and seeding will add the catalog data again.
-Run `node sql/orderTable/createTable.js` once on existing databases to add payment orders and order items; this command is safe to rerun.
+Run `node sql/orderTable/createTable.js` once on existing databases to add payment orders and order items; this command is safe to rerun. If the `orders` table was already created with the old status constraint, run `node sql/orderTable/migrateStatus.js` once to allow the `expired` status.
 
 ## Run the app
 
