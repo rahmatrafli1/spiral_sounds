@@ -86,15 +86,19 @@ function announceStatusChanges(invoices) {
   }
 }
 
-function renderInvoices(invoices) {
+function renderInvoices(invoices, statusSyncFailed = false) {
   dom.list.replaceChildren();
 
   if (invoices.length === 0) {
-    dom.message.textContent = "No invoices yet. Orders will appear here after checkout.";
+    dom.message.textContent = statusSyncFailed
+      ? "Could not verify payment status with Midtrans. Please try again."
+      : "No invoices yet. Orders will appear here after checkout.";
     return;
   }
 
-  dom.message.textContent = "Order statuses refresh automatically while this page is open.";
+  dom.message.textContent = statusSyncFailed
+    ? "Some pending payments could not be checked with Midtrans. Their shown status may be out of date."
+    : "Order statuses refresh automatically while this page is open.";
 
   for (const invoice of invoices) {
     const item = document.createElement("li");
@@ -131,7 +135,7 @@ function renderInvoices(invoices) {
   }
 }
 
-async function refreshInvoices({ notify = false } = {}) {
+async function refreshInvoices() {
   if (isRefreshing) {
     return;
   }
@@ -150,14 +154,37 @@ async function refreshInvoices({ notify = false } = {}) {
     }
 
     const invoices = Array.isArray(data.invoices) ? data.invoices : [];
-    if (notify) {
-      announceStatusChanges(invoices);
-    } else {
-      for (const invoice of invoices) {
+    let statusSyncFailed = false;
+
+    for (const invoice of invoices) {
+      if (!knownStatuses.has(invoice.orderId)) {
         knownStatuses.set(invoice.orderId, invoice.status);
       }
     }
-    renderInvoices(invoices);
+
+    for (const invoice of invoices) {
+      if (invoice.status !== "pending") {
+        continue;
+      }
+
+      try {
+        const statusResponse = await fetch(
+          `/api/checkout/${encodeURIComponent(invoice.orderId)}`,
+          { credentials: "include" },
+        );
+        const order = await statusResponse.json();
+        if (!statusResponse.ok) {
+          throw new Error(order.error || "Could not verify payment status.");
+        }
+        invoice.status = order.status;
+      } catch (err) {
+        console.error(`Payment status refresh failed for ${invoice.orderId}:`, err);
+        statusSyncFailed = true;
+      }
+    }
+
+    announceStatusChanges(invoices);
+    renderInvoices(invoices, statusSyncFailed);
   } catch (err) {
     console.error("Refresh invoices error:", err);
     dom.message.textContent = err.message;
@@ -249,7 +276,7 @@ async function init() {
   }
 
   await refreshInvoices();
-  window.setInterval(() => refreshInvoices({ notify: true }), 5000);
+  window.setInterval(() => refreshInvoices(), 10000);
 }
 
 init();

@@ -27,6 +27,71 @@ const midtransTransactionUrl = (isProduction) =>
     ? "https://app.midtrans.com/snap/v1/transactions"
     : "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
+const midtransStatusUrl = (isProduction, orderId) =>
+  `${isProduction ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com"}/v2/${encodeURIComponent(orderId)}/status`;
+
+function mapMidtransStatus(transactionStatus, fraudStatus) {
+  if (
+    transactionStatus === "settlement" ||
+    (transactionStatus === "capture" && fraudStatus === "accept")
+  ) {
+    return "paid";
+  }
+  if (transactionStatus === "expire") {
+    return "expired";
+  }
+  if (["deny", "cancel", "failure"].includes(transactionStatus)) {
+    return "failed";
+  }
+  return null;
+}
+
+async function syncPendingOrderStatus(db, order) {
+  const { serverKey, isProduction } = midtransConfig();
+  const response = await fetch(midtransStatusUrl(isProduction, order.orderId), {
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${serverKey}:`).toString("base64")}`,
+      Accept: "application/json",
+    },
+  });
+  const gatewayResult = await response.json();
+
+  if (!response.ok) {
+    const detail = Array.isArray(gatewayResult.error_messages)
+      ? gatewayResult.error_messages.join(" ")
+      : gatewayResult.status_message || "Unknown Midtrans status API error.";
+    throw new Error(`Midtrans status check failed (${response.status}): ${detail}`);
+  }
+
+  if (gatewayResult.order_id !== order.orderId) {
+    throw new Error("Midtrans returned a different order ID during status check.");
+  }
+
+  if (Number(gatewayResult.gross_amount) !== order.amountIdr) {
+    throw new Error("Midtrans returned an amount that does not match the order.");
+  }
+
+  const nextStatus = mapMidtransStatus(
+    gatewayResult.transaction_status,
+    gatewayResult.fraud_status,
+  );
+  if (nextStatus) {
+    await db.run(
+      `UPDATE orders
+       SET status = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE order_id = ? AND status = 'pending'`,
+      nextStatus,
+      order.orderId,
+    );
+  }
+
+  const current = await db.get(
+    "SELECT status FROM orders WHERE order_id = ?",
+    order.orderId,
+  );
+  return current.status;
+}
+
 export function getPaymentConfig(req, res) {
   try {
     const { clientKey, isProduction } = midtransConfig();
@@ -240,6 +305,17 @@ export async function getOrderStatus(req, res) {
       return res.status(404).json({ error: "Order not found." });
     }
 
+    if (order.status === "pending") {
+      try {
+        order.status = await syncPendingOrderStatus(db, order);
+      } catch (err) {
+        console.error("Midtrans order status sync error:", err);
+        return res.status(502).json({
+          error: "Could not verify the payment status with Midtrans.",
+        });
+      }
+    }
+
     return res.json(order);
   } catch (err) {
     console.error("Get order status error:", err);
@@ -297,11 +373,7 @@ export async function handleMidtransNotification(req, res) {
 
     console.log("Midtrans notification signature verified for order:", orderId);
 
-    const isPaid =
-      transactionStatus === "settlement" ||
-      (transactionStatus === "capture" && fraudStatus === "accept");
-    const isExpired = transactionStatus === "expire";
-    const isFailed = ["deny", "cancel"].includes(transactionStatus);
+    const nextStatus = mapMidtransStatus(transactionStatus, fraudStatus);
 
     db = await getDBConnection();
     await db.exec("BEGIN IMMEDIATE");
@@ -335,24 +407,17 @@ export async function handleMidtransNotification(req, res) {
       }
 
       let resultingStatus = order.status;
-      if (order.status !== "paid" && isPaid) {
+      const shouldUpdateStatus =
+        nextStatus &&
+        (nextStatus === "paid" ? order.status !== "paid" : order.status === "pending");
+
+      if (shouldUpdateStatus) {
         await db.run(
-          "UPDATE orders SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
+          "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
+          nextStatus,
           orderId,
         );
-        resultingStatus = "paid";
-      } else if (order.status === "pending" && isExpired) {
-        await db.run(
-          "UPDATE orders SET status = 'expired', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
-          orderId,
-        );
-        resultingStatus = "expired";
-      } else if (order.status === "pending" && isFailed) {
-        await db.run(
-          "UPDATE orders SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
-          orderId,
-        );
-        resultingStatus = "failed";
+        resultingStatus = nextStatus;
       }
 
       await db.exec("COMMIT");

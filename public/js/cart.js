@@ -56,15 +56,18 @@ async function startCheckout() {
       onSuccess: () => confirmPayment(payment.orderId),
       onPending: () => {
         dom.userMessage.textContent =
-          "Payment is pending. Your cart is empty; the order status will update when Midtrans confirms it.";
+          "Payment is pending. Your cart is empty; checking the order status with Midtrans.";
+        void confirmPayment(payment.orderId);
       },
       onError: () => {
         dom.userMessage.textContent =
-          "The payment could not be completed. Your cart is empty; check the order status before trying again.";
+          "The payment could not be completed. Checking the final status with Midtrans.";
+        void confirmPayment(payment.orderId);
       },
       onClose: () => {
         dom.userMessage.textContent =
-          "Payment window closed. Your cart is empty and the order remains pending until Midtrans updates it.";
+          "Payment window closed. Checking the order status with Midtrans.";
+        void confirmPayment(payment.orderId);
       },
     });
   } catch (err) {
@@ -116,7 +119,7 @@ async function confirmPayment(orderId) {
       return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 
   dom.userMessage.textContent =

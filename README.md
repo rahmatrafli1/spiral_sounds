@@ -8,7 +8,7 @@ Spiral Sounds is a simple online store for browsing and buying vinyl records. Th
 - Create an account and log in.
 - Add products to the cart and view the item count.
 - View and remove cart items or empty the entire cart.
-- Pay for an order through Midtrans Snap. The cart is emptied after a payment transaction is successfully created; order status is updated by a verified Midtrans notification.
+- Pay for an order through Midtrans Snap. The cart is emptied after a payment transaction is successfully created; order status is synchronized from verified Midtrans notifications and server-side status checks.
 - Store user accounts, catalog data, and cart items in SQLite.
 
 ## Tech Stack
@@ -97,7 +97,7 @@ Requests that send data use JSON. Login and registration use a session cookie; a
 | `DELETE` | `/api/cart/all`        | Empty the cart. Requires login.                                                                     |
 | `GET`    | `/api/checkout/config` | Get the public Midtrans Snap configuration. Requires login.                                        |
 | `POST`   | `/api/checkout`        | Create a pending order and Midtrans Snap transaction from the current cart. Requires login.        |
-| `GET`    | `/api/checkout/:orderId`| Check the status of one of the logged-in user's orders. Requires login.                             |
+| `GET`    | `/api/checkout/:orderId`| Check and synchronize the status of one of the logged-in user's orders with Midtrans. Requires login. |
 | `GET`    | `/api/invoices`        | List the logged-in user's invoices and order statuses. Requires login.                              |
 | `GET`    | `/api/invoices/:orderId` | Get one invoice with its saved order items. Requires login.                                          |
 | `POST`   | `/api/checkout/notification` | Receive Midtrans payment notifications; verify its signature before updating an order.         |
