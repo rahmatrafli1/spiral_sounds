@@ -22,10 +22,10 @@ const midtransConfig = () => {
   };
 };
 
-const midtransBaseUrl = (isProduction) =>
+const midtransTransactionUrl = (isProduction) =>
   isProduction
-    ? "https://app.midtrans.com"
-    : "https://app.sandbox.midtrans.com";
+    ? "https://app.midtrans.com/snap/v1/transactions"
+    : "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
 export function getPaymentConfig(req, res) {
   try {
@@ -138,7 +138,7 @@ export async function createPayment(req, res) {
     let gatewayResponse;
     try {
       const response = await fetch(
-        `${midtransBaseUrl(config.isProduction)}/snap/v1/transactions`,
+        midtransTransactionUrl(config.isProduction),
         {
           method: "POST",
           headers: {
